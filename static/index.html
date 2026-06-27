@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictive Supply Chain & Route Optimization Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <div class="logo-icon"></div>
+            <h1 class="logo-text">Aegis Optima</h1>
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            <button id="btn-generate-data" class="btn btn-secondary">
+                <span class="btn-text">Generate Operational Data</span>
+                <div class="spinner hidden" id="spinner-data"></div>
+            </button>
+            <button id="btn-train-model" class="btn btn-secondary">
+                <span class="btn-text">Retrain ML Engine</span>
+                <div class="spinner hidden" id="spinner-train"></div>
+            </button>
+            <div class="model-status-badge">
+                <div class="status-dot" id="status-dot"></div>
+                <span id="status-text">Checking ML Status...</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-grid">
+        <!-- Control Panel -->
+        <aside class="control-panel">
+            <div>
+                <h2 class="section-title">Route Settings</h2>
+                <div class="form-group">
+                    <label for="start-hub">Start Hub</label>
+                    <select id="start-hub">
+                        <option value="Warehouse_A">Warehouse A (San Francisco)</option>
+                        <option value="Warehouse_B">Warehouse B (Oakland)</option>
+                        <option value="Warehouse_C">Warehouse C (Daly City)</option>
+                        <option value="Distribution_Center_North">Distribution Center North (Richmond)</option>
+                        <option value="Distribution_Center_South">Distribution Center South (Fremont)</option>
+                        <option value="Metro_Hub_East">Metro Hub East (Hayward)</option>
+                        <option value="Metro_Hub_West">Metro Hub West (Sunset District)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Select Delivery Stops to Visit</label>
+                    <div class="stops-selector" id="stops-selector"></div>
+                </div>
+            </div>
+
+            <div>
+                <h2 class="section-title">Real-Time Simulation</h2>
+                <div class="form-group">
+                    <label for="sim-weather">Weather Conditions</label>
+                    <select id="sim-weather">
+                        <option value="sunny">Sunny (Clear)</option>
+                        <option value="rainy">Rainy (Slowdown)</option>
+                        <option value="snowy">Snowy (Severe Hazards)</option>
+                        <option value="stormy">Stormy (High Delay Risk)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="sim-traffic">Traffic Density</label>
+                    <select id="sim-traffic">
+                        <option value="low">Low Density</option>
+                        <option value="medium">Medium Density</option>
+                        <option value="high">High Density</option>
+                        <option value="jam">Gridlock Jam</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="sim-vehicle">Vehicle Class</label>
+                    <select id="sim-vehicle">
+                        <option value="van">Standard Cargo Van</option>
+                        <option value="truck">Heavy-Duty Delivery Truck</option>
+                        <option value="electric">EV Delivery Van</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="sim-weight">Cargo Weight (kg)</label>
+                    <input type="number" id="sim-weight" value="30" min="5" max="150">
+                </div>
+                <div class="form-group">
+                    <label for="sim-driver">Driver Experience (years)</label>
+                    <input type="number" id="sim-driver" value="5" min="0" max="40">
+                </div>
+            </div>
+
+            <button id="btn-optimize" class="btn btn-success" style="margin-top: auto;">
+                <span class="btn-text">Run Route Optimization</span>
+                <div class="spinner hidden" id="spinner-optimize"></div>
+            </button>
+        </aside>
+
+        <!-- Main Dashboard -->
+        <main class="main-dashboard">
+            <!-- KPI Bar -->
+            <div class="kpi-container">
+                <div class="kpi-card efficiency">
+                    <div class="kpi-label">Route Efficiency Score</div>
+                    <div class="kpi-value" id="kpi-efficiency">--</div>
+                    <div class="kpi-change positive" id="kpi-efficiency-change">Baseline comparison</div>
+                </div>
+                <div class="kpi-card savings">
+                    <div class="kpi-label">Total Cost Savings</div>
+                    <div class="kpi-value" id="kpi-cost-savings">--</div>
+                    <div class="kpi-change positive" id="kpi-fuel-savings">0L fuel saved</div>
+                </div>
+                <div class="kpi-card risk">
+                    <div class="kpi-label">Predicted Delay Risk</div>
+                    <div class="kpi-value" id="kpi-risk-level">--</div>
+                    <div class="kpi-change" id="kpi-risk-ratio">Risk Ratio: --</div>
+                </div>
+                <div class="kpi-card time">
+                    <div class="kpi-label">ETA Variance/Savings</div>
+                    <div class="kpi-value" id="kpi-time-saved">--</div>
+                    <div class="kpi-change positive" id="kpi-percent-saved">0% duration reduced</div>
+                </div>
+            </div>
+
+            <!-- Visualization Pane -->
+            <div class="visualization-container">
+                <div class="map-card">
+                    <div id="map"></div>
+                </div>
+                <div class="details-card">
+                    <h3 class="section-title">Route Sequence Comparison</h3>
+                    <div class="route-info-box">
+                        <div class="route-title baseline">
+                            <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background-color:#8e9bb0;"></span>
+                            Baseline Sequence
+                        </div>
+                        <div class="route-sequence-display" id="baseline-seq-list">Select stops and optimize</div>
+                        <div class="time-row"><span>Travel duration:</span><span id="baseline-duration">--</span></div>
+                        <div class="time-row"><span>Predicted Delays:</span><span id="baseline-delay" style="color:var(--accent-amber);">--</span></div>
+                    </div>
+                    <div class="route-info-box" style="border-color:rgba(0,255,135,0.25);">
+                        <div class="route-title optimized">
+                            <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background-color:var(--accent-green);box-shadow:0 0 6px var(--accent-green-glow);"></span>
+                            Optimized Sequence (GA)
+                        </div>
+                        <div class="route-sequence-display" id="optimized-seq-list">Select stops and optimize</div>
+                        <div class="time-row"><span>Travel duration:</span><span id="optimized-duration">--</span></div>
+                        <div class="time-row"><span>Predicted Delays:</span><span id="optimized-delay" style="color:var(--accent-green);">--</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Baseline vs Optimized chart -->
+            <div class="metrics-comparison-chart">
+                <h3 class="section-title">Model predictions: baseline vs optimized durations</h3>
+                <div style="height:180px;width:100%;">
+                    <canvas id="comparison-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- ── SHAP Feature Importance Panel (NEW) ── -->
+            <div class="metrics-comparison-chart" id="shap-panel" style="margin-top:1rem;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+                    <h3 class="section-title" style="margin:0;">
+                        ML explainability — what drives delivery delays
+                    </h3>
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        <span id="shap-method-badge" class="shap-badge"></span>
+                        <button id="btn-load-shap" class="btn btn-secondary" style="padding:0.3rem 0.8rem;font-size:0.78rem;">
+                            <span class="btn-text">Load Importance</span>
+                            <div class="spinner hidden" id="spinner-shap"></div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Empty state -->
+                <div id="shap-empty" style="text-align:center;padding:2rem 0;color:var(--text-secondary);font-size:0.85rem;">
+                    Train the ML model first, then click "Load Importance" to see which features drive delays.
+                </div>
+
+                <!-- Chart container (hidden until loaded) -->
+                <div id="shap-chart-wrapper" style="display:none;">
+                    <div style="position:relative;width:100%;" id="shap-canvas-container">
+                        <canvas id="shap-chart"></canvas>
+                    </div>
+                    <!-- Legend & insights row -->
+                    <div id="shap-insights" style="margin-top:1rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.6rem;"></div>
+                </div>
+            </div>
+            <!-- ── end SHAP panel ── -->
+
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>
