@@ -71,4 +71,5 @@ pip install scikit-learn joblib fastapi uvicorn xgboost pandas numpy scipy reque
 <img width="1850" height="888" alt="Screenshot 2026-06-27 123915" src="https://github.com/user-attachments/assets/aad943e0-5de9-4e7a-bceb-09b18f69afad" />
 <img width="1197" height="622" alt="Screenshot 2026-06-27 124132" src="https://github.com/user-attachments/assets/6385b9e8-4d66-414c-96a2-83c84a495fae" />
 <img width="1822" height="872" alt="Screenshot 2026-06-27 124149" src="https://github.com/user-attachments/assets/26bf5406-a50b-425e-bf14-55ee48195472" />
+<img width="1796" height="895" alt="Screenshot 2026-06-27 171436" src="https://github.com/user-attachments/assets/664fb43b-22a7-44d2-bf5d-85f53c0b0885" />
 
