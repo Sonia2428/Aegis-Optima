@@ -66,3 +66,7 @@ pip install scikit-learn joblib fastapi uvicorn xgboost pandas numpy scipy reque
 3. **Access the Dashboard**:
    Open your browser and navigate to:
    **[http://127.0.0.1:8000](http://127.0.0.1:8000)**
+---
+### Screenshot
+<img width="1850" height="888" alt="Screenshot 2026-06-27 123915" src="https://github.com/user-attachments/assets/aad943e0-5de9-4e7a-bceb-09b18f69afad" />
+
